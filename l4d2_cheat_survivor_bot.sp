@@ -3,6 +3,8 @@
 #include <sdktools>
 //#include <sdkhooks>
 
+
+
 #define INFO_NAME "Left 4 Dead 2 Cheat Survivor Bot"
 #define INFO_AUTHOR "Randerion(HaoJun0823)"
 #define INFO_DESCRIPTION "Modify survivor bot ability."
@@ -598,7 +600,7 @@ public Action:PlayerHurt(Handle:event, String:event_name[], bool:dontBroadcast) 
 	new attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 	new mul = GetConVarFloat(SurvivorBotRefelectDamage);
 	new damage = GetEventInt(event, "dmg_health");
-	if (mul>0.0 && IsFakeClient(client) && GetClientTeam(client) == TEAM_SURVIVORS && GetClientTeam(attacker) != TEAM_SURVIVORS){
+	if (mul>0.0 && IsValidClient(client) && IsValidClient(attacker) && IsFakeClient(client) && GetClientTeam(client) == TEAM_SURVIVORS && GetClientTeam(attacker) != TEAM_SURVIVORS){
 	DealDamage(client, attacker, RoundToNearest(mul * damage), 0, "damage_reflect");
 	}
 	
@@ -625,7 +627,7 @@ stock DealDamage(attacker=0,victim,damage,dmg_type=0,String:weapon[]="")
 				DispatchKeyValue(PointHurt,"classname",weapon);
 			}
 			DispatchSpawn(PointHurt);
-			if(IsValidEntity(attacker))
+			if(IsValidClient(attacker))
 				AcceptEntityInput(PointHurt, "Hurt", attacker);
 			else 	
 				AcceptEntityInput(PointHurt, "Hurt", -1);
@@ -634,3 +636,14 @@ stock DealDamage(attacker=0,victim,damage,dmg_type=0,String:weapon[]="")
 		}
 	}
 }
+
+stock bool IsValidClient(int client)
+{
+    if(client <= 0 || client > MaxClients)
+        return false;
+        
+    if(!IsClientInGame(client) || !IsClientConnected(client))
+        return false;
+        
+    return true;
+}  
