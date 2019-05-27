@@ -84,7 +84,7 @@ public OnPluginStart()
 	//SurvivorBotHealItem = CreateConVar("randerion_l4d_survivor_bot_heal_or_upgrade_item", "1", "Set survivor robot auto get first aid kit or defibrillator or explosive upgradepack or incendiary upgradepack.(default:1;off:0;first_aid_kit:1,defibrillator:2,explosive:4,incendiary:8,1+2+4+8=15=Random_All)", 0, true, 0.0);
 	SurvivorBotHealItem = CreateConVar("randerion_l4d_survivor_bot_heal_or_upgrade_item", "1", "Set survivor robot auto get first aid kit.(default:1;off:0;first_aid_kit:1)", 0, true, 0.0);
 	SurvivorBotPrimaryWeapon = CreateConVar("randerion_l4d_survivor_bot_primary_weapon", "1", "Set survivor robot auto get pumpshotgun.(default:1;off:0;pumpshotgun:1)", 0, true, 0.0);
-	SurvivorBotSecondaryWeapon = CreateConVar("randerion_l4d_survivor_bot_secondary_weapon", "1", "Set survivor robot auto get pistol magnum.(default:1;off:0;pistol_magnum:1)", 0, true, 0.0);
+	SurvivorBotSecondaryWeapon = CreateConVar("randerion_l4d2_survivor_bot_secondary_weapon", "1", "Set survivor robot auto get pistol magnum.(default:1;off:0;pistol_magnum:1)", 0, true, 0.0);
 	SurvivorBotGrenade = CreateConVar("randerion_l4d_survivor_bot_grenade_item", "1", "Set survivor robot auto get pipe bomb.(default:1;off:0;pipe_bomb:1)", 0, true, 0.0);
 
 
@@ -533,7 +533,7 @@ GiveItemsByCvars(client){
 
 	}
 
-	if(GetPlayerWeaponSlot(client, 1) == -1){
+	if(GameVersion > 1 && GetPlayerWeaponSlot(client, 1) == -1){
 	
 	if(GetConVarInt(SurvivorBotSecondaryWeapon)==1){
 	CheatCommand(client, "give", "pistol_magnum");	
