@@ -25,6 +25,7 @@
 //Get from IPVE:https://www.ipve.com/bbs/redirect.php?fid=526&tid=444018&goto=nextoldset
 //#define FCVAR_FLAGS FCVAR_PLUGIN|FCVAR_NOTIFY
 #define IsValidClient(%1) (1 <= %1 <= MaxClients && IsClientInGame(%1))
+#define PluginDebug GetConVarInt(SurvivorBotPluginDebug)!=0?true:false
 
 //This is my method.
 #define IsValidSurvivorBot(%1) (IsValidClient(%1) && IsFakeClient(%1) && GetClientTeam(%1) == TEAM_SURVIVORS)
@@ -53,7 +54,7 @@ static String:OldGrenadeList[][] = {"pipe_bomb" , "molotov" };
 //static String:OldExtraItemList[][] = {"pain_pills"};
 
 new GameVersion;
-new PluginDebug;
+//new PluginDebug;
 //new RandomItemId;
 
 /*
@@ -147,7 +148,7 @@ public Plugin:myinfo =
 public OnPluginStart()
 {
 	GameVersion = GetGameVersion();
-
+	if(GameVersion==0){SetFailState("Stop Plugin Start!");return ;}
 	AutoExecConfig(true, "l4d_survivor_cheat_bot");
 
 	SurvivorBotPluginSwitch = CreateConVar("randerion_l4d_survivor_bot_plugin_switch", "1", "Whether the plugin is started.(default:1,on:1;off:0)", 0, true, 0.0);
@@ -244,7 +245,7 @@ public OnPluginStart()
 	RegConsoleCmd("sm_l4d_cheat_survivor_bot_version", PrintVersion, "Print Plugins Version.");
 	//RegConsoleCmd("sm_l4d_cheat_survivor_bot_information", PrintData, "Print Plugins Config[Need In Game].");
 
-	PluginDebug = GetConVarInt(SurvivorBotPluginDebug)!=0?true:false;
+	
 
 	if (GetConVarInt(SurvivorBotPluginSwitch) == 1) {
 	if(PluginDebug){LogMessage("Enabled!");}
@@ -1218,6 +1219,8 @@ stock PrintChat(client){
 		switch(GetConVarInt(SurvivorBotHealItem)){
 			case 1:
 			PrintToChat(client, "Survivor Bot will auto get first aid kit forever.");
+			case 2:
+			PrintToChat(client, "Survivor Bot will auto get heal or upgrade item forever.");
 			default:
 			PrintToChat(client, "Survivor Bot will not auto get any heal or upgrade item.");
 			
@@ -1250,16 +1253,26 @@ stock PrintChat(client){
 		
 		if (GetConVarInt(SurvivorBotPrimaryWeapon) == 1)
 		{
+		
+			if(GetConVarInt(SurvivorBotPrimaryWeapon) >= 2){
+			PrintToChat(client, "Survivor Bot will auto get all primary weapon forever.");
+			}else{
 			PrintToChat(client, "Survivor Bot will auto get primary weapon forever.");
+			}
 		}
 		else
 		{
+
 			PrintToChat(client, "Survivor Bot will not auto get primary weapon.");
 		}
 		
 		if (GameVersion<=1 ? false : GetConVarInt(SurvivorBotSecondaryWeapon) == 1 ? true : false)
 		{
+			if(GetConVarInt(SurvivorBotSecondaryWeapon) >= 2){
+			PrintToChat(client, "Survivor Bot will auto get all secondary weapon forever.");
+			}else{
 			PrintToChat(client, "Survivor Bot will auto get secondary weapon forever.");
+			}
 		}
 		else
 		{
