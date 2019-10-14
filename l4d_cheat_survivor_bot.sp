@@ -711,13 +711,14 @@ public Action:WeaponFireAmmo(Handle:event, String:event_name[], bool:dontBroadca
 {
 
 	new target = GetClientOfUserId(GetEventInt(event, "userid"));
+	if (IsValidSurvivorBot(target)) {
 	new ent = GetEntPropEnt(target, Prop_Send, "m_hActiveWeapon");
 	//		if (GetConVarInt(SurvivorBotInfiniteAmmo) == 1) {
 
 	if (HasEntProp(ent, Prop_Send, "m_iClip1")) {
 	SetEntProp(ent, Prop_Send, "m_iClip1", GetEntProp(ent, Prop_Send, "m_iClip1") + 1);
 	}
-
+	}
 }
 
 public Action:WeaponFire(Handle:event, String:event_name[], bool:dontBroadcast)
