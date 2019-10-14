@@ -6,11 +6,11 @@
 #define INFO_NAME "Left 4 Dead 1 & 2 Cheat Survivor Bot"
 #define INFO_AUTHOR "Randerion(HaoJun0823)"
 #define INFO_DESCRIPTION "Modify survivor bot ability."
-#define INFO_VERSION "0.1e"
-#define INFO_URL "https://github.com/HaoJun0823/l4d2_cheat_bot"
+#define INFO_VERSION "0.1f"
+#define INFO_URL "https://github.com/HaoJun0823/l4d_cheat_bot"
 
 //#define INFO_URL "https://steamcommunity.com/id/HaoJun0823/"
-//#define INFO_GITHUB "https://github.com/HaoJun0823/l4d2_cheat_bot"
+//#define INFO_GITHUB "https://github.com/HaoJun0823/l4d_cheat_bot"
 
 #define TEAM_SPECTATORS 1
 #define TEAM_SURVIVORS 2
@@ -83,7 +83,8 @@ new Handle:SurvivorBotHealthMul = INVALID_HANDLE;
 new Handle:SurvivorBotInfiniteAmmo = INVALID_HANDLE;
 new Handle:SurvivorBotFullHeal = INVALID_HANDLE;
 new Handle:SurvivorBotWeaponSpeedMul = INVALID_HANDLE;
-new Handle:SurvivorBotMeleeSpeedMul = INVALID_HANDLE;
+//Merge to Weapon
+//new Handle:SurvivorBotMeleeSpeedMul = INVALID_HANDLE;
 new Handle:SurvivorBotMoveSpeedMul = INVALID_HANDLE;
 new Handle:SurvivorBotGravity = INVALID_HANDLE;
 
@@ -161,7 +162,9 @@ public OnPluginStart()
 
 	//Weapons
 	SurvivorBotWeaponSpeedMul = CreateConVar("randerion_l4d_survivor_bot_weapon_speed_mul", "0.5", "Set survivor bot's weapon shot speed.(default:0.5;normal:1.0;faster:<1.0;slower:>1.0)", 0, true, 0.0);
-	SurvivorBotMeleeSpeedMul = CreateConVar("randerion_l4d_survivor_bot_melee_speed_mul", "0.5", "Set survivor bot's melee attack speed.(default:0.5;normal:1.0;faster:<1.0;slower:>1.0)", 0, true, 0.0);
+	
+	//Merge to Weapon
+	//SurvivorBotMeleeSpeedMul = CreateConVar("randerion_l4d_survivor_bot_melee_speed_mul", "0.5", "Set survivor bot's melee attack speed.(default:0.5;normal:1.0;faster:<1.0;slower:>1.0)", 0, true, 0.0);
 	
 	//Enities
 	SurvivorBotMoveSpeedMul = CreateConVar("randerion_l4d_survivor_bot_move_speed_mul", "1.5", "Set survivor bot's move speed multiple.(default:1.5;normal:1.0;faster:>1.0;slower:<1.0)", 0, true, 0.1);
@@ -254,12 +257,13 @@ public OnPluginStart()
 		
 		//Need optimization when some feature closed, we can unhook correspond event.
 
-	if(GetConVarInt(SurvivorBotInfiniteAmmo) >= 1 ||(GetConVarFloat(SurvivorBotWeaponSpeedMul)!= 1.0 && GetConVarFloat(SurvivorBotWeaponSpeedMul) > 0.0) || (GetConVarFloat(SurvivorBotMeleeSpeedMul) != 1.0 && GetConVarFloat(SurvivorBotMeleeSpeedMul) > 0.0)){
+	//if((GetConVarFloat(SurvivorBotWeaponSpeedMul)!= 1.0 && GetConVarFloat(SurvivorBotWeaponSpeedMul) > 0.0) || (GetConVarFloat(SurvivorBotMeleeSpeedMul) != 1.0 && GetConVarFloat(SurvivorBotMeleeSpeedMul) > 0.0)){
+	if((GetConVarFloat(SurvivorBotWeaponSpeedMul)!= 1.0 && GetConVarFloat(SurvivorBotWeaponSpeedMul) > 0.0)){
 	if(PluginDebug){LogMessage("Hook:1:WeaponFire");}
 	HookEvent("weapon_fire", WeaponFire);
 	}
-
-		
+	
+	
 	if(GetConVarInt(SurvivorBotFullHeal) >= 1){
 	if(PluginDebug){LogMessage("Hook:2:FullHeal");}
 
@@ -268,10 +272,12 @@ public OnPluginStart()
 
 	if(GetConVarInt(SurvivorBotPrimaryWeapon) > 0 || GetConVarInt(SurvivorBotGrenade) > 0 || GetConVarInt(SurvivorBotSecondaryWeapon) > 0 || GetConVarInt(SurvivorBotExtraItem) > 0 || GetConVarInt(SurvivorBotHealItem) > 0 || GetConVarInt(SurvivorBotSpecialAmmo) > 0 || GetConVarInt(SurvivorBotLaserSight) > 0)
 	{
-	if(PluginDebug){LogMessage("Hook:3:WeaponRandom");}
 	if(GameVersion >= 2 ){
-		HookEvent("adrenaline_used", PlayerAdrenalineUsed);
-		HookEvent("defibrillator_used", PlayerDefibrillatorUsed);
+	HookEvent("adrenaline_used", PlayerAdrenalineUsed);
+	HookEvent("defibrillator_used", PlayerDefibrillatorUsed);
+	if(PluginDebug){LogMessage("Hook:3:L4D2WeaponRandom");}
+	}else{
+	if(PluginDebug){LogMessage("Hook:3:L4D1WeaponRandom");}
 	}
 		
 	HookEvent("heal_success", PlayerHealSuccessItem);
@@ -286,6 +292,9 @@ public OnPluginStart()
 	HookEvent("grenade_bounce", PlayerGrenadeUsed);
 	HookEvent("hegrenade_detonate", PlayerGrenadeUsed);
 	HookEvent("respawning", PlayerRespawning);
+	
+	HookEvent("item_pickup", PlayerPickupItem);
+	HookEvent("ammo_pickup", PlayerPickupAmmo);
 	}
 
 	if(GetConVarFloat(SurvivorBotHealthMul) !=1.0 || GetConVarFloat(SurvivorBotGravity) != 1.0 || GetConVarFloat(SurvivorBotMoveSpeedMul) != 1.0){
@@ -325,6 +334,13 @@ public OnPluginStart()
 	}
 		
 		//HookEvent("weapon_drop", PlayeWeaponDrop); //Very Complicated!
+
+	if(GetConVarInt(SurvivorBotInfiniteAmmo) >= 1)
+	{
+	if(PluginDebug){LogMessage("Hook:10:WeaponFireAmmo");}
+	HookEvent("weapon_fire", WeaponFireAmmo);
+	}
+
 
 	}else{
 	if(PluginDebug){LogMessage("Disabled!");}
@@ -691,6 +707,19 @@ public Action:PlayerSpawn(Handle:event, String:event_name[], bool:dontBroadcast)
 
 }
 
+public Action:WeaponFireAmmo(Handle:event, String:event_name[], bool:dontBroadcast)
+{
+
+	new target = GetClientOfUserId(GetEventInt(event, "userid"));
+	new ent = GetEntPropEnt(target, Prop_Send, "m_hActiveWeapon");
+	//		if (GetConVarInt(SurvivorBotInfiniteAmmo) == 1) {
+
+	if (HasEntProp(ent, Prop_Send, "m_iClip1")) {
+	SetEntProp(ent, Prop_Send, "m_iClip1", GetEntProp(ent, Prop_Send, "m_iClip1") + 1);
+	}
+
+}
+
 public Action:WeaponFire(Handle:event, String:event_name[], bool:dontBroadcast)
 {
 
@@ -703,7 +732,22 @@ public Action:WeaponFire(Handle:event, String:event_name[], bool:dontBroadcast)
 		decl String:entclass[64];
 		GetEdictClassname(ent, entclass, sizeof(entclass));
 
-		if (GameVersion > 1 && ent == GetPlayerWeaponSlot(target, 1) && StrContains(entclass, "melee",false) >= 0)
+		WeaponReload[WeaponReloadCount] = ent;
+		WeaponReloadCount++;
+
+
+	
+
+
+
+
+		//if (GameVersion >= 1 && ent == GetPlayerWeaponSlot(target, 1) && StrContains(entclass, "melee",false) != -1)
+		/*
+
+
+		
+
+		if (GameVersion >= 1)
 		{
 
 			WeaponReload[WeaponReloadCount] = ent;
@@ -721,40 +765,22 @@ public Action:WeaponFire(Handle:event, String:event_name[], bool:dontBroadcast)
 					SetEntProp(ent, Prop_Send, "m_iClip1", GetEntProp(ent, Prop_Send, "m_iClip1") + 1);
 				}
 
-				/*
+				
 				if(HasEntProp(ent,Prop_Send,"m_iClip2")){
 				SetEntProp(ent, Prop_Send, "m_iClip2", GetEntProp(ent, Prop_Send, "m_iClip2")+1);
 				}
-				*/
+				
 			}
 
 
 
 		}
+		*/
 
 	}
 
 	return Plugin_Continue;
 
-}
-
-public Action:NormalWeaponSpeed(Handle:timer, any:ent)
-{
-	KillTimer(timer);
-	timer = INVALID_HANDLE;
-
-	if (IsValidEdict(ent))
-	{
-		decl String:entclass[64];
-		GetEdictClassname(ent, entclass, sizeof(entclass));
-		if (StrContains(entclass, "weapon") >= 0 || StrContains(entclass, "melee") >= 0)
-		{
-			if (HasEntProp(ent, Prop_Send, "m_flPlaybackRate")) {
-				SetEntPropFloat(ent, Prop_Send, "m_flPlaybackRate", 1.0);
-			}
-		}
-	}
-	return Plugin_Continue;
 }
 
 
@@ -843,6 +869,7 @@ public Action:TimerRegenTick( Handle:timer, any:client)
 	}else{
 	
 		KillTimer(timer);
+		timer = INVALID_HANDLE;
 		PlayerHealTimer[client] = false;
 	}
 	
@@ -863,7 +890,28 @@ public Action:PlayerHurtExtra(Handle:event, String:event_name[], bool:dontBroadc
 	return Plugin_Continue;
 	
 }
+/*
+public Action:WeaponFire(Handle:event, String:event_name[], bool:dontBroadcast)
+{
 
+	new target = GetClientOfUserId(GetEventInt(event, "userid"));
+
+	if (IsValidSurvivorBot(target)) {
+
+
+		new ent = GetEntPropEnt(target, Prop_Send, "m_hActiveWeapon");
+		decl String:entclass[64];
+		GetEdictClassname(ent, entclass, sizeof(entclass));
+
+		WeaponReload[WeaponReloadCount] = ent;
+		WeaponReloadCount++;
+		
+	}
+
+	return Plugin_Continue;
+
+}
+*/
 
 //With game but no action.
 public OnGameFrame()
@@ -879,38 +927,44 @@ public OnGameFrame()
 			ent = WeaponReload[i];
 			if (IsValidEdict(ent))
 			{
-				decl String:entclass[64];
-				GetEdictClassname(ent, entclass, sizeof(entclass));
+				//decl String:entclass[64];
+				//GetEdictClassname(ent, entclass, sizeof(entclass));
 
-				if (StrContains(entclass, "weapon") >= 0 || StrContains(entclass, "melee") >= 0)
-				{
-					new Float:Mul = GetConVarFloat(SurvivorBotWeaponSpeedMul);
-
+				//if (StrContains(entclass, "weapon") >= 0 || StrContains(entclass, "melee") >= 0)
+				
+				new Float:Mul = GetConVarFloat(SurvivorBotWeaponSpeedMul);
+				Mul = Mul>0.00?Mul:0.000001;
+					/*
 					if (StrContains(entclass, "melee") >= 0) {
 
 						Mul = GetConVarFloat(SurvivorBotMeleeSpeedMul);
 
 					}
-
-					new Float:ETime = GetGameTime();
-					new Float:LTime;
-
-					if (HasEntProp(ent, Prop_Send, "m_flPlaybackRate")) {
-						SetEntPropFloat(ent, Prop_Send, "m_flPlaybackRate", Mul);
-					}
-
-					if (HasEntProp(ent, Prop_Send, "m_flNextPrimaryAttack")) {
-						LTime = (GetEntPropFloat(ent, Prop_Send, "m_flNextPrimaryAttack") - ETime)*Mul;
-						SetEntPropFloat(ent, Prop_Send, "m_flNextPrimaryAttack", LTime + ETime);
-					}
-
-					if (HasEntProp(ent, Prop_Send, "m_flNextSecondaryAttack")) {
-						LTime = (GetEntPropFloat(ent, Prop_Send, "m_flNextSecondaryAttack") - ETime)*Mul;
-						SetEntPropFloat(ent, Prop_Send, "m_flNextSecondaryAttack", LTime + ETime);
-					}
-
-					CreateTimer(LTime, NormalWeaponSpeed, ent);
+					*/
+				
+				new Float:ETime = GetGameTime();
+				decl Float:LPTime;
+				decl Float:LSTime;
+				if (HasEntProp(ent, Prop_Send, "m_flPlaybackRate")) {
+					SetEntPropFloat(ent, Prop_Send, "m_flPlaybackRate", Mul);
 				}
+
+				if (HasEntProp(ent, Prop_Send, "m_flNextPrimaryAttack")) {
+					LPTime = (GetEntPropFloat(ent, Prop_Send, "m_flNextPrimaryAttack") - ETime)*Mul;
+					LPTime = LPTime>0?LPTime:0.000001;
+					//LogMessage("LPTIME:%f",LPTime);
+					SetEntPropFloat(ent, Prop_Send, "m_flNextPrimaryAttack", LPTime + ETime);
+				}
+
+				if (HasEntProp(ent, Prop_Send, "m_flNextSecondaryAttack")) {
+					LSTime = (GetEntPropFloat(ent, Prop_Send, "m_flNextSecondaryAttack") - ETime)*Mul;
+					LPTime = LSTime>0?LSTime:0.000001;
+					//LogMessage("LSTIME:%f",LSTime);
+					SetEntPropFloat(ent, Prop_Send, "m_flNextSecondaryAttack", LSTime + ETime);
+				}
+
+				CreateTimer(LPTime>LSTime?LSTime:LPTime, NormalWeaponSpeed, ent);
+				
 			}
 		}
 
@@ -918,6 +972,26 @@ public OnGameFrame()
 
 	}
 }
+
+public Action:NormalWeaponSpeed(Handle:timer, any:ent)
+{
+	KillTimer(timer);
+	timer = INVALID_HANDLE;
+
+	if (IsValidEdict(ent))
+	{
+		decl String:entclass[64];
+		GetEdictClassname(ent, entclass, sizeof(entclass));
+		if (StrContains(entclass, "weapon") >= 0 || StrContains(entclass, "melee") >= 0)
+		{
+			if (HasEntProp(ent, Prop_Send, "m_flPlaybackRate")) {
+				SetEntPropFloat(ent, Prop_Send, "m_flPlaybackRate", 1.0);
+			}
+		}
+	}
+	return Plugin_Continue;
+}
+
 
 
 stock DealDamage(attacker=0,victim,damage,dmg_type=0,String:weapon[]="")
@@ -1180,7 +1254,8 @@ stock PrintChat(client){
 			PrintToChat(client, "This Game is Not Left 4 Dead.");
 		}
 		
-		PrintToChat(client, "\nSurvivor Bot Status:\nHealth:%d\nWeapon Speed:%.2f%%\nMelee Speed:%.2f%%\nMove Speed:%.2f%%\nGravity:%.2f%%\nReflectDamage:%.2f%%\nExtraAttackDamage:%.2f%%\nSufferDamage:%.2f%%\n", 100 * GetConVarInt(SurvivorBotHealthMul), 1.0 / GetConVarFloat(SurvivorBotWeaponSpeedMul) * 100, 1.0 / GetConVarFloat(SurvivorBotMeleeSpeedMul) * 100, 100 * GetConVarFloat(SurvivorBotMoveSpeedMul), 100* GetConVarFloat(SurvivorBotGravity), 100 * GetConVarFloat(SurvivorBotReflectDamage), 100 * GetConVarFloat(SurvivorBotExtraAttackDamage), 100 * GetConVarFloat(SurvivorBotSufferDamage));
+		//PrintToChat(client, "\nSurvivor Bot Status:\nHealth:%d\nWeapon Speed:%.2f%%\nMelee Speed:%.2f%%\nMove Speed:%.2f%%\nGravity:%.2f%%\nReflectDamage:%.2f%%\nExtraAttackDamage:%.2f%%\nSufferDamage:%.2f%%\n", 100 * GetConVarInt(SurvivorBotHealthMul), 1.0 / GetConVarFloat(SurvivorBotWeaponSpeedMul) * 100, 1.0 / GetConVarFloat(SurvivorBotMeleeSpeedMul) * 100, 100 * GetConVarFloat(SurvivorBotMoveSpeedMul), 100* GetConVarFloat(SurvivorBotGravity), 100 * GetConVarFloat(SurvivorBotReflectDamage), 100 * GetConVarFloat(SurvivorBotExtraAttackDamage), 100 * GetConVarFloat(SurvivorBotSufferDamage));
+		PrintToChat(client, "\nSurvivor Bot Status:\nHealth:%d\nWeapon Speed:%.2f%%\nMove Speed:%.2f%%\nGravity:%.2f%%\nReflectDamage:%.2f%%\nExtraAttackDamage:%.2f%%\nSufferDamage:%.2f%%\n", 100 * GetConVarInt(SurvivorBotHealthMul), 1.0 / GetConVarFloat(SurvivorBotWeaponSpeedMul) * 100, 100 * GetConVarFloat(SurvivorBotMoveSpeedMul), 100* GetConVarFloat(SurvivorBotGravity), 100 * GetConVarFloat(SurvivorBotReflectDamage), 100 * GetConVarFloat(SurvivorBotExtraAttackDamage), 100 * GetConVarFloat(SurvivorBotSufferDamage));
 		if (GetConVarInt(SurvivorBotInfiniteAmmo) == 1)
 		{
 			PrintToChat(client, "Survivor Bot have infinite ammo forever.");
