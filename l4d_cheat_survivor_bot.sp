@@ -76,9 +76,21 @@ new WeaponReloadCount;
 new MaxPlayerHealth[MAXPLAYERS +1];
 new PlayerHealTimer[MAXPLAYERS +1];
 
+new PlayerParticleSpitter[MAXPLAYERS + 1];
+new PlayerParticleRight[MAXPLAYERS + 1];
+new PlayerParticleLeft[MAXPLAYERS + 1];
+
+//new ParticlePlayerGroup[MAXPLAYERS + 1];
+
+new PlayerOriginalHealth[MAXPLAYERS +1];
+new Float:PlayerOriginalGravity[MAXPLAYERS +1];
+new Float:PlayerOriginalSpeed[MAXPLAYERS +1];
+
+//new Handle:ParticleTimer;
 
 new Handle:SurvivorBotPluginSwitch = INVALID_HANDLE;
 new Handle:SurvivorBotPluginDebug = INVALID_HANDLE;
+new Handle:SurvivorBotParticle = INVALID_HANDLE;
 new Handle:SurvivorBotHealthMul = INVALID_HANDLE;
 new Handle:SurvivorBotInfiniteAmmo = INVALID_HANDLE;
 new Handle:SurvivorBotFullHeal = INVALID_HANDLE;
@@ -102,6 +114,8 @@ new Handle:SurvivorBotExtraAttackDamage = INVALID_HANDLE;
 new Handle:SurvivorBotHealTimer = INVALID_HANDLE;
 new Handle:SurvivorBotNoFriendlyDamage = INVALID_HANDLE;
 new Handle:SurvivorBotSufferDamage = INVALID_HANDLE;
+
+new Handle:SurvivorBotReset = INVALID_HANDLE;
 
 /*
 new Handle:SurvivorBotAlwaysExtraItem = INVALID_HANDLE;
@@ -148,13 +162,16 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
+	//LogMessage("%s Start running, current map will be make modifies.",INFO_NAME);
+	
 	GameVersion = GetGameVersion();
 	if(GameVersion==0){SetFailState("Stop Plugin Start!");return ;}
 	AutoExecConfig(true, "l4d_survivor_cheat_bot");
 
 	SurvivorBotPluginSwitch = CreateConVar("randerion_l4d_survivor_bot_plugin_switch", "1", "Whether the plugin is started.(default:1,on:1;off:0)", 0, true, 0.0);
 	SurvivorBotPluginDebug = CreateConVar("randerion_l4d_survivor_bot_plugin_debug", "0", "Logging Plugin's information.(default:0,on:1;off:0)", 0, true, 0.0);
-
+	SurvivorBotReset = CreateConVar("randerion_l4d_survivor_bot_reset", "0", "When player join or replace bot, everything will be normal.[Maybe effects other plugins].(default:0,on:1;off:0)", 0, true, 0.0);
+	SurvivorBotParticle = CreateConVar("randerion_l4d2_survivor_bot_particle", "0", "Add Spitter Particle for Bot.[Just Particle, Not effect GameData, Only Left Dead 2].(default:0,mouth:1;off:0;eye+mouth:2)", 0, true, 0.0);
 	//Health
 	SurvivorBotHealthMul = CreateConVar("randerion_l4d_survivor_bot_health_mul", "5.0", "Set survivor bot's life multiple.(default:5.0;normal:1.0;more:>1.0;less:<1.0)", 0, true, 0.01);
 	SurvivorBotFullHeal = CreateConVar("randerion_l4d_survivor_bot_full_heal", "1", "When the value is 1, the healing of the survivor bot will restore all health.(default:1;normal:0;on:1;off:0)", 0, true, 0.0);
@@ -248,7 +265,98 @@ public OnPluginStart()
 	RegConsoleCmd("sm_l4d_cheat_survivor_bot_version", PrintVersion, "Print Plugins Version.");
 	//RegConsoleCmd("sm_l4d_cheat_survivor_bot_information", PrintData, "Print Plugins Config[Need In Game].");
 
+	CreateTimer(0.0, OnPluginRunningDelayed);
+
+}
+
+public Action:PlayerFirstSpawnParticle(Handle:event, String:event_name[], bool:dontBroadcast) {
+
+	new target = GetClientOfUserId(GetEventInt(event, "userid"));
 	
+	if(IsValidSurvivorBot(target)){
+	
+	//ParticlePlayerGroup[target]= target;
+	
+	if(GameVersion >=2){
+	CreateParticle(target);
+	if(GetConVarInt(SurvivorBotParticle)==2){
+	CreateParticleEye(target);
+	}
+	}
+
+	
+	}
+	
+
+
+	return Plugin_Continue;
+	
+	
+	
+}
+
+public Action:PlayerReplaceBotParticle(Handle:event, String:event_name[], bool:dontBroadcast) {
+
+	new target = GetClientOfUserId(GetEventInt(event, "player"));
+	new client = GetClientOfUserId(GetEventInt(event, "client"));
+	
+	if(IsValidSurvivorBot(client)){
+	
+	//ParticlePlayerGroup[target]= target;
+	
+	if(GameVersion >=2){
+	RemoveParticle(target);
+	if(GetConVarInt(SurvivorBotParticle)==2){
+	RemoveParticleEye(target);
+	}
+	}
+
+	
+
+	
+	}
+	
+
+
+	return Plugin_Continue;
+	
+	
+	
+}
+
+public Action:BotReplacePlayerParticle(Handle:event, String:event_name[], bool:dontBroadcast) {
+
+	new target = GetClientOfUserId(GetEventInt(event, "player"));
+	//new client = GetClientOfUserId(GetEventInt(event, "client"));
+	
+	if(IsValidSurvivorBot(target)){
+	
+	//ParticlePlayerGroup[target]= target;
+	
+	if(GameVersion >=2){
+	CreateParticle(target);
+	if(GetConVarInt(SurvivorBotParticle)==2){
+	CreateParticleEye(target);
+	}
+	}
+	
+	
+	
+
+	
+	}
+	
+
+
+	return Plugin_Continue;
+	
+	
+	
+}
+
+
+public Action:OnPluginRunningDelayed(Handle:timer)
+{
 
 	if (GetConVarInt(SurvivorBotPluginSwitch) == 1) {
 	if(PluginDebug){LogMessage("Enabled!");}
@@ -295,13 +403,16 @@ public OnPluginStart()
 	
 	HookEvent("item_pickup", PlayerPickupItem);
 	HookEvent("ammo_pickup", PlayerPickupAmmo);
+	HookEvent("player_bot_replace", PlayerReplaceBotItem);
 	}
 
 	if(GetConVarFloat(SurvivorBotHealthMul) !=1.0 || GetConVarFloat(SurvivorBotGravity) != 1.0 || GetConVarFloat(SurvivorBotMoveSpeedMul) != 1.0){
 	if(PluginDebug){LogMessage("Hook:4:EnitiyProp");}
 	HookEvent("player_spawn", PlayerSpawn);
+	HookEvent("player_bot_replace", PlayerReplace);
 	HookEvent("respawning", PlayerRespawningHealth);
 	HookEvent("player_first_spawn", PlayerFirstSpawnHealth);
+	//HookEvent("player_bot_replace", PlayerReplaceBot);
 	}
 		
 	if(GetConVarInt(SurvivorBotNoFriendlyDamage) == 1) {
@@ -333,99 +444,56 @@ public OnPluginStart()
 		
 	}
 		
-		//HookEvent("weapon_drop", PlayeWeaponDrop); //Very Complicated!
+	//HookEvent("weapon_drop", PlayeWeaponDrop); //Very Complicated!
 
 	if(GetConVarInt(SurvivorBotInfiniteAmmo) >= 1)
 	{
 	if(PluginDebug){LogMessage("Hook:10:WeaponFireAmmo");}
 	HookEvent("weapon_fire", WeaponFireAmmo);
 	}
+	
+	
+	
+	
+	
 
+
+	if(GetConVarInt(SurvivorBotReset) != 0){
+	
+	if(PluginDebug){LogMessage("Hook:11:PlayerReplaceBot");}
+	HookEvent("player_bot_replace", BotReplacePlayer);
+	}
+	
+	if(GetConVarInt(SurvivorBotParticle) != 0){
+	
+	if(PluginDebug){LogMessage("Hook:12:PlayerParticleBot");}
+	
+	if(GameVersion>=2){
+	for(new i=0;i<sizeof(PlayerParticleSpitter);i++){
+		PlayerParticleSpitter[i]=-1;
+	}
+	}
+	
+	for(new i=0;i<sizeof(PlayerParticleLeft);i++){
+		PlayerParticleLeft[i]=-1;
+	}
+	
+	for(new i=0;i<sizeof(PlayerParticleRight);i++){
+		PlayerParticleRight[i]=-1;
+	}
+	
+	HookEvent("player_spawn", PlayerFirstSpawnParticle);
+	}
 
 	}else{
 	if(PluginDebug){LogMessage("Disabled!");}
 	}
 
 
-	//CreateTimer(3.0, OnPluginRunningDelayed);
+	
 
 }
-/*
-public Action:OnPluginRunningDelayed(Handle:timer)
-{
 
-		if (GetConVarInt(SurvivorBotPluginSwitch) == 1) {
-
-		HookEvent("player_first_spawn", PlayerFirstSpawn);
-		//Need optimization when some feature closed, we can unhook correspond event.
-
-		if(GetConVarInt(SurvivorBotInfiniteAmmo) >= 1 ||(GetConVarFloat(SurvivorBotWeaponSpeedMul)!= 1.0 && GetConVarFloat(SurvivorBotWeaponSpeedMul) > 0.0) || (GetConVarFloat(SurvivorBotMeleeSpeedMul) != 1.0 && GetConVarFloat(SurvivorBotMeleeSpeedMul) > 0.0)){
-		HookEvent("weapon_fire", WeaponFire);
-		}
-
-
-		if(GetConVarInt(SurvivorBotFullHeal) >= 1){
-		HookEvent("heal_success", PlayerHealSuccess);
-		}
-
-		if(GetConVarInt(SurvivorBotPrimaryWeapon) > 0 || GetConVarInt(SurvivorBotGrenade) > 0 || GetConVarInt(SurvivorBotSecondaryWeapon) > 0 || GetConVarInt(SurvivorBotExtraItem) > 0 || GetConVarInt(SurvivorBotHealItem) > 0 || GetConVarInt(SurvivorBotSpecialAmmo) > 0 || GetConVarInt(SurvivorBotLaserSight) > 0)
-	{
-
-		if(GameVersion >= 2 ){
-		HookEvent("adrenaline_used", PlayerAdrenalineUsed);
-		HookEvent("defibrillator_used", PlayerDefibrillatorUsed);
-		}
-		
-		HookEvent("pills_used", PlayerPillsUsed);
-		HookEvent("grenade_bounce", PlayerGrenadeBounce);
-		HookEvent("hegrenade_detonate", PlayerGrenadeDetonate);
-
-
-		
-		HookEvent("upgrade_pack_used", PlayerUpgradeUsed);
-		HookEvent("grenade_bounce", PlayerGrenadeUsed);
-		HookEvent("hegrenade_detonate", PlayerGrenadeUsed);
-		HookEvent("respawning", PlayerRespawning);
-	}
-
-		if(GetConVarFloat(SurvivorBotHealthMul) !=1.0 || GetConVarFloat(SurvivorBotGravity) != 1.0 || GetConVarFloat(SurvivorBotMoveSpeedMul) != 1.0){
-		HookEvent("player_spawn", PlayerSpawn);
-		HookEvent("respawning", PlayerRespawningHealth);
-		HookEvent("player_first_spawn", PlayerFirstSpawnHealth);
-		}
-		
-		if(GetConVarInt(SurvivorBotNoFriendlyDamage) == 1) {
-		HookEvent("player_hurt", PlayerHurtFriendly);
-		}
-
-		if(GetConVarFloat(SurvivorBotSufferDamage) > 0.0){
-		HookEvent("player_hurt", PlayerHurtSuffer);
-		}
-				
-		
-		if(GetConVarInt(SurvivorBotHealTimer) >= 1){
-		HookEvent("player_hurt", PlayerHurtHealTimer);
-		}
-		
-		
-		if(GetConVarFloat(SurvivorBotReflectDamage)>0.0){
-		
-		HookEvent("player_hurt", PlayerHurt);
-		
-		}
-		
-		if(GetConVarFloat(SurvivorBotExtraAttackDamage)>0.0){
-		
-		HookEvent("player_hurt", PlayerHurtExtra);
-		
-		}
-		
-		//HookEvent("weapon_drop", PlayeWeaponDrop); //Very Complicated!
-
-	}
-
-}
-*/
 /*
 public Action:PrintData(int client, int args)
 {
@@ -438,6 +506,19 @@ public Action:PrintVersion(int client, int args)
 	PrintInformation(client);
 	return Plugin_Continue;
 }
+
+
+public Action:PlayerReplaceBotItem(Handle:event, String:event_name[], bool:dontBroadcast) {
+	new client = GetClientOfUserId(GetEventInt(event, "bot"));
+	if (IsValidSurvivorBot(client)) {GiveItemsByCvars(client);}
+	
+
+	return Plugin_Continue;
+	
+	
+}
+
+
 
 public Action:PlayerDefibrillatorUsed(Handle:event, String:event_name[], bool:dontBroadcast) {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
@@ -457,7 +538,7 @@ public Action:SpawnerGiveItem(Handle:event, String:event_name[], bool:dontBroadc
 
 /*
 // I think i don't need do this.
-public Action:PlayeWeaponDrop(Handle:event, String:event_name[], bool:dontBroadcast) {
+public Action:PlayerWeaponDrop(Handle:event, String:event_name[], bool:dontBroadcast) {
 	new client = GetClientOfUserId(GetEventInt(event, "userid"));
 	if (IsValidSurvivorBot(client)) {
 		
@@ -480,12 +561,47 @@ public Action:PlayerRespawning(Handle:event, String:event_name[], bool:dontBroad
 	
 }
 
+public Action:BotReplacePlayer(Handle:event, String:event_name[], bool:dontBroadcast) {
+	new client = GetClientOfUserId(GetEventInt(event, "bot"));
+	if(IsValidClient(client) && GetClientTeam(client) == TEAM_SURVIVORS && !IsFakeClient(client)){
+	
+		if (HasEntProp(client, Prop_Data, "m_iMaxHealth") && HasEntProp(client, Prop_Data, "m_iHealth")) {
+			SetEntProp(client, Prop_Data, "m_iHealth", RoundToNearest((GetEntProp(client, Prop_Data, "m_iHealth") * GetConVarFloat(SurvivorBotHealthMul) )));
+			SetEntProp(client, Prop_Data, "m_iMaxHealth", PlayerOriginalHealth[client]);
+			MaxPlayerHealth[client] = GetEntProp(client, Prop_Data, "m_iMaxHealth");
+		}
+
+		if (HasEntProp(client, Prop_Data, "m_flLaggedMovementValue")) {
+			SetEntPropFloat(client, Prop_Data, "m_flLaggedMovementValue", PlayerOriginalSpeed[client]);
+		}
+		SetEntityGravity(client, PlayerOriginalGravity[client]);
+	
+	}
+	
+
+	return Plugin_Continue;
+	
+	
+}
+
 public Action:PlayerFirstSpawnHealth(Handle:event, String:event_name[], bool:dontBroadcast) {
 
 	new target = GetClientOfUserId(GetEventInt(event, "userid"));
 
-	if (IsValidSurvivorBot(target)) {
+	if(IsValidClient(target) && GetClientTeam(target) == TEAM_SURVIVORS){
+	
+	if (HasEntProp(target, Prop_Data, "m_iMaxHealth") && HasEntProp(target, Prop_Data, "m_iHealth")) {
+	PlayerOriginalHealth[target] =  GetEntProp(target, Prop_Data, "m_iMaxHealth");
+	}
+	
+	if (HasEntProp(target, Prop_Data, "m_flLaggedMovementValue")) {
+	PlayerOriginalSpeed[target] =  GetEntPropFloat(target, Prop_Data, "m_flLaggedMovementValue");
+	}
+	PlayerOriginalGravity[target] =  GetEntityGravity(target);
+	}
 
+	if (IsValidSurvivorBot(target)) {
+		
 		if (HasEntProp(target, Prop_Data, "m_iMaxHealth") && HasEntProp(target, Prop_Data, "m_iHealth")) {
 			SetEntProp(target, Prop_Data, "m_iMaxHealth", RoundToNearest(GetEntProp(target, Prop_Data, "m_iMaxHealth")*GetConVarFloat(SurvivorBotHealthMul)));
 			SetEntProp(target, Prop_Data, "m_iHealth", RoundToNearest(GetEntProp(target, Prop_Data, "m_iHealth")*GetConVarFloat(SurvivorBotHealthMul)));
@@ -495,7 +611,6 @@ public Action:PlayerFirstSpawnHealth(Handle:event, String:event_name[], bool:don
 		if (HasEntProp(target, Prop_Data, "m_flLaggedMovementValue")) {
 			SetEntPropFloat(target, Prop_Data, "m_flLaggedMovementValue", GetEntPropFloat(target, Prop_Data, "m_flLaggedMovementValue")*GetConVarFloat(SurvivorBotMoveSpeedMul));
 		}
-
 		SetEntityGravity(target, GetConVarFloat(SurvivorBotGravity));
 
 	}
@@ -528,6 +643,56 @@ public Action:PlayerRespawningHealth(Handle:event, String:event_name[], bool:don
 	return Plugin_Continue;
 	
 	
+}
+
+public Action:PlayerSpawn(Handle:event, String:event_name[], bool:dontBroadcast)
+{
+
+	new target = GetClientOfUserId(GetEventInt(event, "userid"));
+
+	if (IsValidSurvivorBot(target)) {
+			
+		if (HasEntProp(target, Prop_Data, "m_iMaxHealth") && HasEntProp(target, Prop_Data, "m_iHealth")) {
+			SetEntProp(target, Prop_Data, "m_iMaxHealth", RoundToNearest(GetEntProp(target, Prop_Data, "m_iMaxHealth")*GetConVarFloat(SurvivorBotHealthMul)));
+			SetEntProp(target, Prop_Data, "m_iHealth", RoundToNearest(GetEntProp(target, Prop_Data, "m_iHealth")*GetConVarFloat(SurvivorBotHealthMul)));
+			MaxPlayerHealth[target] = GetEntProp(target, Prop_Data, "m_iMaxHealth");
+		}
+
+		if (HasEntProp(target, Prop_Data, "m_flLaggedMovementValue")) {
+			SetEntPropFloat(target, Prop_Data, "m_flLaggedMovementValue", GetEntPropFloat(target, Prop_Data, "m_flLaggedMovementValue")*GetConVarFloat(SurvivorBotMoveSpeedMul));
+		}
+
+		SetEntityGravity(target, GetConVarFloat(SurvivorBotGravity));
+
+	}
+
+	return Plugin_Continue;
+
+}
+
+public Action:PlayerReplace(Handle:event, String:event_name[], bool:dontBroadcast)
+{
+
+	new target = GetClientOfUserId(GetEventInt(event, "bot"));
+
+	if (IsValidSurvivorBot(target)) {
+			
+		if (HasEntProp(target, Prop_Data, "m_iMaxHealth") && HasEntProp(target, Prop_Data, "m_iHealth")) {
+			SetEntProp(target, Prop_Data, "m_iMaxHealth", RoundToNearest(GetEntProp(target, Prop_Data, "m_iMaxHealth")*GetConVarFloat(SurvivorBotHealthMul)));
+			SetEntProp(target, Prop_Data, "m_iHealth", RoundToNearest(GetEntProp(target, Prop_Data, "m_iHealth")*GetConVarFloat(SurvivorBotHealthMul)));
+			MaxPlayerHealth[target] = GetEntProp(target, Prop_Data, "m_iMaxHealth");
+		}
+
+		if (HasEntProp(target, Prop_Data, "m_flLaggedMovementValue")) {
+			SetEntPropFloat(target, Prop_Data, "m_flLaggedMovementValue", GetEntPropFloat(target, Prop_Data, "m_flLaggedMovementValue")*GetConVarFloat(SurvivorBotMoveSpeedMul));
+		}
+
+		SetEntityGravity(target, GetConVarFloat(SurvivorBotGravity));
+
+	}
+
+	return Plugin_Continue;
+
 }
 
 public Action:PlayerGrenadeUsed(Handle:event, String:event_name[], bool:dontBroadcast) {
@@ -680,31 +845,6 @@ public Action:PlayerFirstSpawn(Handle:event, String:event_name[], bool:dontBroad
 	PrintInformation(client);
 	PrintChat(client);
 	return Plugin_Continue;
-}
-
-public Action:PlayerSpawn(Handle:event, String:event_name[], bool:dontBroadcast)
-{
-
-	new target = GetClientOfUserId(GetEventInt(event, "userid"));
-
-	if (IsValidSurvivorBot(target)) {
-
-		if (HasEntProp(target, Prop_Data, "m_iMaxHealth") && HasEntProp(target, Prop_Data, "m_iHealth")) {
-			SetEntProp(target, Prop_Data, "m_iMaxHealth", RoundToNearest(GetEntProp(target, Prop_Data, "m_iMaxHealth")*GetConVarFloat(SurvivorBotHealthMul)));
-			SetEntProp(target, Prop_Data, "m_iHealth", RoundToNearest(GetEntProp(target, Prop_Data, "m_iHealth")*GetConVarFloat(SurvivorBotHealthMul)));
-			MaxPlayerHealth[target] = GetEntProp(target, Prop_Data, "m_iMaxHealth");
-		}
-
-		if (HasEntProp(target, Prop_Data, "m_flLaggedMovementValue")) {
-			SetEntPropFloat(target, Prop_Data, "m_flLaggedMovementValue", GetEntPropFloat(target, Prop_Data, "m_flLaggedMovementValue")*GetConVarFloat(SurvivorBotMoveSpeedMul));
-		}
-
-		SetEntityGravity(target, GetConVarFloat(SurvivorBotGravity));
-
-	}
-
-	return Plugin_Continue;
-
 }
 
 public Action:WeaponFireAmmo(Handle:event, String:event_name[], bool:dontBroadcast)
@@ -915,6 +1055,39 @@ public Action:WeaponFire(Handle:event, String:event_name[], bool:dontBroadcast)
 */
 
 //With game but no action.
+
+public OnMapStart(){
+
+/*
+	if(GetConVarInt(SurvivorBotParticle)>0){
+	
+	//ParticleTimer = CreateTimer(10.0, PlayerParticleTimer, 0, TIMER_REPEAT);
+	
+	}
+*/
+}
+
+public OnMapEnd(){
+	
+	/*
+	KillTimer(ParticleTimer);
+	ParticleTimer =INVALID_HANDLE;
+*/
+	
+	for(new i=0;i<sizeof(PlayerHealTimer);i++){
+		PlayerHealTimer[i] = false;
+	}
+	
+	
+
+}
+
+public OnPluginEnd(){
+
+	//LogMessage("%s Stop running, next map or restart will be restart or finllay close.",INFO_NAME);
+
+}
+
 public OnGameFrame()
 {
 	
@@ -973,7 +1146,67 @@ public OnGameFrame()
 
 	}
 }
+/*
+public Action:PlayerParticleTimer(Handle:timer, any:data)
+{
+	
+	LogMessage("Create Particle!");
+	for(new i=0;i<(MAXPLAYERS + 1);i++){
+	LogMessage("Particle Check:%d",i);
+	if (IsValidSurvivorBot(ParticlePlayerGroup[i]) && PlayerParticle[0][i] != -1) {
+	LogMessage("Pass Check:%d",i);
+*/
+	/*
+	decl P_mouth = PlayerParticle[0][i];
+	decl P_leye = PlayerParticle[1][i];
+	decl P_reye = PlayerParticle[2][i];
+	*/
+/*
+	int entity = CreateEntityByName("info_particle_system");
+	DispatchKeyValue(entity, "effect_name", "spitter_slime_trail");	
+	DispatchSpawn(entity);
+	ActivateEntity(entity);
+	AcceptEntityInput(entity, "Start");
+	SetVariantString("!activator");
+	AcceptEntityInput(entity, "SetParent", ParticlePlayerGroup[i]);
+	SetVariantString("mouth");
+	AcceptEntityInput(entity, "SetParentAttachment");
+	
+	new Float:vPos[3];
+	
+	//vPos[1] = -2.0;
+	vPos[3] = 4.0;
+	
+	TeleportEntity(entity, vPos, NULL_VECTOR, NULL_VECTOR);
+	
+	PlayerParticle[0][i] = entity;
+	
+	LogMessage("Added Enitiy:%d",i);
+	
+	}else{
+	
+	LogMessage("Unpass Check:%d",i);
+	if(IsValidEntity(PlayerParticle[0][i])){
+	LogMessage("Remove Enitiy:%d",i);
+	
+	RemoveEntity(PlayerParticle[0][i]);
+	PlayerParticle[0][i] = -1;
+	
+	}
+	
+	
+	}		
+		
+		
+	}
+	
+	
 
+
+
+
+}
+*/
 public Action:NormalWeaponSpeed(Handle:timer, any:ent)
 {
 	KillTimer(timer);
@@ -1372,4 +1605,112 @@ stock PrintChat(client){
 
 stock PrintInformation(client){
 	ReplyToCommand(client,"%s %s By %s\n%s\nAny More Infomation:%s",INFO_NAME,INFO_VERSION,INFO_AUTHOR,INFO_DESCRIPTION,INFO_URL);
+}
+
+stock RemoveParticle(client){
+	
+	if(PlayerParticleSpitter[client] != -1 && IsValidEntity(PlayerParticleSpitter[client])){
+	
+	
+	RemoveEntity(PlayerParticleSpitter[client]);
+	PlayerParticleSpitter[client] = -1;
+	
+	}
+}
+
+stock RemoveParticleEye(client){
+	
+	if((PlayerParticleLeft[client] != -1  ) && IsValidEntity(PlayerParticleLeft[client])){
+	
+	
+	RemoveEntity(PlayerParticleLeft[client]);
+	PlayerParticleLeft[client] = -1;
+	
+	}
+	
+	if((PlayerParticleRight[client] != -1  ) && IsValidEntity(PlayerParticleRight[client])){
+	
+	
+	RemoveEntity(PlayerParticleRight[client]);
+	PlayerParticleRight[client] = -1;
+	
+	}
+}
+
+stock CreateParticle(target){
+	
+	RemoveParticle(target);
+	
+	int entity = CreateEntityByName("info_particle_system");
+	DispatchKeyValue(entity, "effect_name", "spitter_slime_trail");	
+	DispatchSpawn(entity);
+	ActivateEntity(entity);
+	AcceptEntityInput(entity, "Start");
+	SetVariantString("!activator");
+	AcceptEntityInput(entity, "SetParent", target);
+	SetVariantString("mouth");
+	AcceptEntityInput(entity, "SetParentAttachment");	
+	
+	PlayerParticleSpitter[target] = entity;
+		
+	new Float:vPos[3];
+		
+	//vPos[1] = -2.0;
+	vPos[0] = -4.0;
+	vPos[2] = 3.0;
+	
+	TeleportEntity(entity, vPos, NULL_VECTOR, NULL_VECTOR);	
+	
+	
+}
+
+stock CreateParticleEye(target){
+	
+	RemoveParticleEye(target);
+	{
+	int entity = CreateEntityByName("info_particle_system");
+	DispatchKeyValue(entity, "effect_name", "spitter_slime_trail");	
+	DispatchSpawn(entity);
+	ActivateEntity(entity);
+	AcceptEntityInput(entity, "Start");
+	SetVariantString("!activator");
+	AcceptEntityInput(entity, "SetParent", target);
+	SetVariantString("eyes");
+	AcceptEntityInput(entity, "SetParentAttachment");	
+	
+	PlayerParticleLeft[target] = entity;
+		
+	new Float:vPos[3];
+		
+	//vPos[1] = -2.0;
+	vPos[0] = -2.0;
+	vPos[1] = 1.5;
+	vPos[2] = 4.0;
+	
+	TeleportEntity(entity, vPos, NULL_VECTOR, NULL_VECTOR);	
+	}
+
+	{
+	int entity = CreateEntityByName("info_particle_system");
+	DispatchKeyValue(entity, "effect_name", "spitter_slime_trail");	
+	DispatchSpawn(entity);
+	ActivateEntity(entity);
+	AcceptEntityInput(entity, "Start");
+	SetVariantString("!activator");
+	AcceptEntityInput(entity, "SetParent", target);
+	SetVariantString("eyes");
+	AcceptEntityInput(entity, "SetParentAttachment");	
+	
+	PlayerParticleRight[target] = entity;
+		
+	new Float:vPos[3];
+		
+	//vPos[1] = -2.0;
+	vPos[0] = -2.0;
+	vPos[1] = -1.5;
+	vPos[2] = 4.0;
+	
+	TeleportEntity(entity, vPos, NULL_VECTOR, NULL_VECTOR);	
+	}
+	
 }
