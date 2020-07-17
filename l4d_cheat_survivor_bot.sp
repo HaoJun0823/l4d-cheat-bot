@@ -11,7 +11,7 @@
 
 //Author's note: Love my son Okami Yuuki forever!
 
-//#define INFO_URL "https://steamcommunity.com/id/HaoJun0823/"
+//#define INFO_URL "https://blog.haojun0823.xyz/"
 //#define INFO_GITHUB "https://github.com/HaoJun0823/l4d_cheat_bot"
 
 #define TEAM_SPECTATORS 1
