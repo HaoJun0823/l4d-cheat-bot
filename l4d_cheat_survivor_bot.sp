@@ -9,6 +9,8 @@
 #define INFO_VERSION "0.1f"
 #define INFO_URL "https://github.com/HaoJun0823/l4d_cheat_bot"
 
+//Author's note: Love my son Okami Yuuki forever!
+
 //#define INFO_URL "https://steamcommunity.com/id/HaoJun0823/"
 //#define INFO_GITHUB "https://github.com/HaoJun0823/l4d_cheat_bot"
 
