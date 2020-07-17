@@ -4,7 +4,7 @@
 //#include <sdkhooks>
 
 #define INFO_NAME "Left 4 Dead 1 & 2 Cheat Survivor Bot"
-#define INFO_AUTHOR "Randerion(HaoJun0823)"
+#define INFO_AUTHOR "HaoJun0823"
 #define INFO_DESCRIPTION "Modify survivor bot ability."
 #define INFO_VERSION "0.1f"
 #define INFO_URL "https://github.com/HaoJun0823/l4d_cheat_bot"
